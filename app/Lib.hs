@@ -1,78 +1,74 @@
 module Lib
     (
-        Env(..),
-        State(..),
-        someFunc,
-        f,
-        animate
+        -- Env(..),
+        -- State(..),
+        createBoard,
+        animate,
+        Vector,
+
     ) where
 
 import Control.Concurrent (threadDelay)
+import Data.Array
 import System.Console.ANSI
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
-
-f :: Int -> Bool
-f 3 = True
-f _ = False
-
--- Assuming speed = 1 block per second for version 1.
--- Refresh rate of 1 second.
---------------------------------------------------------------------------------
 -- TYPES!
 type Vector = (Int, Int)
+type Row  = [Bool] 
+type Board  = [Row] 
 
 -- direction vector will be something like (x, y) where x and y can be 0, 1, -1
 data State = State { position :: Vector, direction :: Vector } -- speed :: Int }
   deriving (Show)
 
-data Env = Env { frame :: Vector } -- maxSpeed :: Int, chargeSpeed :: Int }
-  deriving (Show)
+-- a Matrix that represents the map. False is "0" and True is "X"
+-- n: amount of rows
+-- m: amount of columns
+createBoard :: Int -> Int -> Board
+createBoard n m = replicate n (replicate m False)
+
+--------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 -- State
-next :: Env -> State -> State
-next (Env (width, height)) (State (posX, posY) (dirX, dirY)) =
-  let posX' = posX + dirX
-      posY' = posY + dirY
-      hasCrossedTopEdge = posY' > height
-      hasCrossedBottomEdge = posY' < 0
-      hasCrossedLeftEdge = posX' < 0
-      hasCrossedRightEdge = posX' > width
-      dirXFinal = if hasCrossedLeftEdge || hasCrossedRightEdge then (-dirX) else dirX
-      dirYFinal = if hasCrossedTopEdge || hasCrossedBottomEdge then (-dirY) else dirY
-      posXFinal = if hasCrossedLeftEdge || hasCrossedRightEdge
-                    then posX + dirXFinal
-                    else posX'
-      posYFinal = if hasCrossedTopEdge || hasCrossedBottomEdge
-                    then posY + dirYFinal
-                    else posY'
-  in State {
-    position = (posXFinal, posYFinal),
-    direction = (dirXFinal, dirYFinal)
-  }
+-- next :: Env -> State -> State
+-- next (Env (width, height)) (State (posX, posY) (dirX, dirY)) =
+--   let posX' = posX + dirX
+--       posY' = posY + dirY
+--       hasCrossedTopEdge = posY' > height
+--       hasCrossedBottomEdge = posY' < 0
+--       hasCrossedLeftEdge = posX' < 0
+--       hasCrossedRightEdge = posX' > width
+--       dirXFinal = if hasCrossedLeftEdge || hasCrossedRightEdge then (-dirX) else dirX
+--       dirYFinal = if hasCrossedTopEdge || hasCrossedBottomEdge then (-dirY) else dirY
+--       posXFinal = if hasCrossedLeftEdge || hasCrossedRightEdge
+--                     then posX + dirXFinal
+--                     else posX'
+--       posYFinal = if hasCrossedTopEdge || hasCrossedBottomEdge
+--                     then posY + dirYFinal
+--                     else posY'
+--   in State {
+--     position = (posXFinal, posYFinal),
+--     direction = (dirXFinal, dirYFinal)
+--   }
 
 --------------------------------------------------------------------------------
 -- Draw
-drawState :: Env -> State -> String
-drawState env@(Env (_, height)) state =
-  unlines $ reverse $ map (\row -> drawRow env state row) [-1..height+1]
+drawState :: Board -> String
+drawState board =
+  unlines $ [ drawRow (board !! row) | row <- [0 .. (length (head board) - 1)] ]
 
-drawRow :: Env -> State -> Int -> String
-drawRow env@(Env (width, _)) state row = map (\col -> charAt env state (col, row)) [-1..width+1]
+drawRow :: Row -> String
+drawRow row = [charAt (row !! col) | col <- [0 .. (length row - 1)]]
 
-charAt :: Env -> State -> Vector -> Char
-charAt (Env (width, height)) (State (posX, posY) _) (x, y)
-  | (posX, posY) == (x, y) = 'o'
-  | y < 0 || y > height = '-'
-  | x < 0 || x > width = '|'
-  | otherwise = ' '
+charAt :: Bool -> Char
+charAt m = if not m
+    then ' '
+    else '#'
 
 --------------------------------------------------------------------------------
 -- Animate!
 
--- Homework: before printing, let's clear the terminal.
--- Use hoogle.haskell.org or search google to check how to clear the terminal.
-animate :: Env -> State -> IO ()
-animate env state = putStr (drawState env state) >> threadDelay 1000000 >> clearScreen >> animate env (next env state)
+-- Refresh rate of 1 second.
+animate :: Board -> IO ()
+animate board = putStr (drawState board) -- >> threadDelay 1000000 >> clearScreen >> animate board (next board vector)

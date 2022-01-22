@@ -1,6 +1,6 @@
 module Main where
 
-import Lib(Env(..), State(..), animate)
+import Lib(createBoard, Vector, animate)
 
 main :: IO ()
-main = animate (Env (10, 10)) (State (9, 10) (1, 1))
+main = animate (createBoard 10 10)
