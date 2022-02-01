@@ -2,9 +2,9 @@ module Lib
     (
         -- Board(..),
         -- State(..),
+        Vector,
         createBoard,
         animate,
-        Vector,
     ) where
 
 import Control.Concurrent (threadDelay)
@@ -42,12 +42,12 @@ next :: Board -> Board
 next (Board slots position) =
   let x = fst position
       y = snd position
-      lineBreak = x >= length (head slots)
-      nextX = if not lineBreak then x + 1 else 0
-      columnOverflow = y >= length (head slots)
+      columnBreak = x >= length (slots) - 1 
+      nextX = if not columnBreak then x + 1 else 0
+      rowBreak = y >= length (head slots) - 1
       -- If we iterate over all the board we start again
-      nextY = if lineBreak 
-        then if columnOverflow then 0 else y + 1 
+      nextY = if columnBreak 
+        then if rowBreak then 0 else y + 1 
         else y
       newValue = not ((slots !! x) !! y)
       -- change boolean status
@@ -59,7 +59,7 @@ next (Board slots position) =
 -- Draw
 drawBoard :: Board -> String
 drawBoard (Board slots _) =
-  unlines $ reverse $ [ drawRow (slots !! row) | row <- [0 .. (length (head slots) - 1)] ]
+  unlines $ reverse $ [ drawRow (slots !! row) | row <- [0 .. (length (slots) - 1)] ]
 
 drawRow :: Row -> String
 drawRow row = [charAt (row !! col) | col <- [0 .. (length row - 1)]]
